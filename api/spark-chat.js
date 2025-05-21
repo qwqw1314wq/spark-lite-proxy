@@ -1,4 +1,5 @@
-const axios = require('axios');
+import axios from 'axios';
+import crypto from 'crypto';
 
 const APP_ID = process.env.APP_ID;
 const API_KEY = process.env.API_KEY;
@@ -18,7 +19,7 @@ async function generateXunfeiAccessToken() {
   const headerBase64 = encode(header);
   const payloadBase64 = encode(payload);
 
-  const signature = require('crypto')
+  const signature = crypto
     .createHmac('sha256', API_SECRET)
     .update(`${headerBase64}.${payloadBase64}`)
     .digest('base64url');
@@ -26,7 +27,7 @@ async function generateXunfeiAccessToken() {
   return `${headerBase64}.${payloadBase64}.${signature}`;
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method Not Allowed' });
     return;
@@ -41,7 +42,7 @@ module.exports = async (req, res) => {
   try {
     const token = await generateXunfeiAccessToken();
 
-    const result = await require('axios').post(
+    const result = await axios.post(
       'https://spark-api-open.xf-yun.com/v1/chat/completions',
       {
         model: 'spark-lite',
@@ -66,4 +67,5 @@ module.exports = async (req, res) => {
     console.error(err.response?.data || err.message);
     res.status(500).json({ error: '调用讯飞接口失败' });
   }
-};
+}
+
